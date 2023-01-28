@@ -11,18 +11,26 @@ namespace Rasterizer3d
     public sealed class MeshRasterizer : MonoBehaviour
     {
         [SerializeField] Mesh mesh;
-        [SerializeField] ComputeShader computeShader;
-        [SerializeField] RenderTexture outRenderTexture;
-        [SerializeField] Transform target;
+        [SerializeField] ComputeShader clearShader;
+        [SerializeField] ComputeShader rasterizerShader;
+        [SerializeField] RenderTexture outRenderTexture; // 3d target texture
+        [SerializeField] Transform meshTransform;
+        [SerializeField] Camera camera;
 
+        Transform cameraTransform;
         GraphicsBuffer vertexBuffer;
+        GraphicsBuffer vertexResultBuffer;
+        GraphicsBuffer triangleBuffer;
+
         int clearKernelIndex;
-        int mainKernelIndex;
+        int vertexKernelIndex;
+        int triangleKernelIndex;
+
         int vertexCount;
+        int trisCount;
+        const int TexelSize = 32;
 
-        const int Size = 32;
-
-        public int GetTextureSize => Size;
+        public int GetTextureSize => TexelSize;
         public Texture OutRenderTexture => outRenderTexture;
 
         struct Vertex
@@ -30,25 +38,30 @@ namespace Rasterizer3d
             public Vector3 Position;
         }
 
+        struct Triangle
+        {
+            public Vector3Int Indices;
+        }
+
         void Start()
         {
+            cameraTransform = camera.transform;
             Initialize();
-
-            Dispatch();
         }
 
         void Update()
         {
-            Dispatch();
+            Clear();
+            Render();
         }
 
         void Initialize()
         {
             var param = new RenderTextureDescriptor
             {
-                width = Size,
-                height = Size,
-                volumeDepth = Size,
+                width = TexelSize,
+                height = TexelSize,
+                volumeDepth = TexelSize,
                 dimension = TextureDimension.Tex3D,
                 enableRandomWrite = true,
                 graphicsFormat = GraphicsFormat.R32G32B32A32_SFloat,
@@ -59,40 +72,71 @@ namespace Rasterizer3d
             outRenderTexture.Create();
 
             var vertices = mesh.vertices;
-            var normals = mesh.normals;
-            var tris = mesh.triangles;
             vertexCount = vertices.Length;
-            var nativeArray = new NativeArray<Vertex>(vertexCount,
-                Allocator.Temp,
-                NativeArrayOptions.UninitializedMemory);
+            var vertexArray = new NativeArray<Vertex>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             for (var i = 0; i < vertexCount; i++)
             {
                 var v = vertices[i];
-                nativeArray[i] = new Vertex
+                vertexArray[i] = new Vertex
                 {
                     Position = v,
                 };
             }
 
-            vertexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, nativeArray.Length, Marshal.SizeOf<Vertex>());
-            vertexBuffer.SetData(nativeArray);
-            nativeArray.Dispose();
+            vertexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, vertexArray.Length, Marshal.SizeOf<Vertex>());
+            vertexResultBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, vertexArray.Length, Marshal.SizeOf<Vertex>());
+            vertexBuffer.SetData(vertexArray);
+            vertexResultBuffer.SetData(vertexArray);
+            vertexArray.Dispose();
 
-            clearKernelIndex = computeShader.FindKernel("CSClear");
-            mainKernelIndex = computeShader.FindKernel("CSMain");
-            computeShader.SetTexture(clearKernelIndex, "_Result", outRenderTexture);
-            computeShader.SetBuffer(mainKernelIndex, "_VertexBuffer", vertexBuffer);
-            computeShader.SetTexture(mainKernelIndex, "_Result", outRenderTexture);
-            computeShader.SetInt("_Size", Size);
+            var tris = mesh.triangles;
+            trisCount = tris.Length / 3;
+            var trisArray = new NativeArray<Triangle>(trisCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            for (var i = 0; i < trisCount; i++)
+            {
+                var offset = i * 3;
+                trisArray[i] = new Triangle
+                {
+                    Indices = new Vector3Int(tris[offset], tris[offset + 1], tris[offset + 2])
+                };
+            }
+
+            triangleBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, trisCount, Marshal.SizeOf<Triangle>());
+            triangleBuffer.SetData(trisArray);
+            trisArray.Dispose();
+
+            clearKernelIndex = clearShader.FindKernel("CSMain");
+            clearShader.SetInt("_TexelSize", TexelSize);
+            clearShader.SetTexture(clearKernelIndex, "_TargetTex", outRenderTexture);
+
+            vertexKernelIndex = rasterizerShader.FindKernel("CSVertex");
+            triangleKernelIndex = rasterizerShader.FindKernel("CSTriangle");
+
+            rasterizerShader.SetBuffer(vertexKernelIndex, "_VertexBuffer", vertexBuffer);
+            rasterizerShader.SetBuffer(vertexKernelIndex, "_VertexResultBuffer", vertexResultBuffer);
+            rasterizerShader.SetBuffer(triangleKernelIndex, "_VertexResultBuffer", vertexResultBuffer);
+            rasterizerShader.SetBuffer(triangleKernelIndex, "_TriangleBuffer", triangleBuffer);
+            rasterizerShader.SetTexture(triangleKernelIndex, "_TargetTex", outRenderTexture);
+            rasterizerShader.SetInt("_TexelSize", TexelSize);
         }
 
-        void Dispatch()
+        void Clear()
         {
-            computeShader.SetMatrix("_ModelToWorldMatrix", target.localToWorldMatrix);
-            computeShader.GetKernelThreadGroupSizes(clearKernelIndex, out var x, out var y, out var z);
-            computeShader.Dispatch(clearKernelIndex, (int) (Size * Size * Size / x), 1, 1);
-            computeShader.GetKernelThreadGroupSizes(mainKernelIndex, out var x2, out _, out _);
-            computeShader.Dispatch(mainKernelIndex, (int) (vertexCount / x2), 1, 1);
+            clearShader.GetKernelThreadGroupSizes(clearKernelIndex, out var x, out var y, out var z);
+            clearShader.Dispatch(clearKernelIndex, (int) (TexelSize * TexelSize * TexelSize / x), 1, 1);
+        }
+
+        void Render()
+        {
+            rasterizerShader.SetMatrix("_ModelToWorldMatrix", meshTransform.localToWorldMatrix);
+            rasterizerShader.SetMatrix("_WorldToCameraMatrix", cameraTransform.worldToLocalMatrix);
+            var orthSize = camera.orthographicSize * 2;
+            rasterizerShader.SetVector("_CameraData", new Vector4(orthSize, orthSize, camera.nearClipPlane, camera.farClipPlane));
+            rasterizerShader.GetKernelThreadGroupSizes(vertexKernelIndex, out var x, out _, out _);
+            rasterizerShader.Dispatch(vertexKernelIndex, (int) (vertexCount / x), 1, 1);
+
+            rasterizerShader.GetKernelThreadGroupSizes(triangleKernelIndex, out var x2, out _, out _);
+            rasterizerShader.Dispatch(triangleKernelIndex, (int) (trisCount / x2), 1, 1);
         }
     }
 }
