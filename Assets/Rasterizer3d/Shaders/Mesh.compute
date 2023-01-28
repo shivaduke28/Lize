@@ -1,0 +1,54 @@
+#pragma kernel CSClear
+RWTexture3D<float4> _Result;
+uint _Size;
+
+[numthreads(64, 1, 1)]
+void CSClear(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    uint size = _Size;
+    uint x, y, z;
+
+    z = floor(index / (size * size));
+    uint i = index - z * size * size;
+    y = floor(i / size);
+    x = i - y * size;
+
+    uint3 pixelPos = uint3(x, y, z);
+    _Result[pixelPos] = float4(0, 0, 0, 0);
+}
+
+
+#pragma kernel CSMain
+
+struct Vertex
+{
+    float3 Position;
+};
+
+StructuredBuffer<Vertex> _VertexBuffer;
+float4x4 _ModelToWorldMatrix;
+
+[numthreads(64, 8, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    Vertex v = _VertexBuffer[index];
+    float3 p = v.Position;
+    float3 pos = mul(_ModelToWorldMatrix, float4(v.Position, 1));
+
+    uint size = _Size;
+
+    float wh = 3;
+    float w = wh * 2;
+    pos += float3(wh, wh, wh);
+    pos /= float3(w, w, w);
+
+    // frustumの外
+    if (any(pos < 0) || any(pos > 1)) return;
+
+    pos *= size;
+    uint3 pixelPos = uint3(floor(pos.x), floor(pos.y), floor(pos.z));
+
+    _Result[pixelPos] = float4(1, 1, 1, 1);
+}
