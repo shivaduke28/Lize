@@ -1,44 +1,33 @@
 #pragma kernel CSVertex
 
-struct Vertex
-{
-    float3 Position;
-};
-
 // object space position
-StructuredBuffer<Vertex> _VertexBuffer;
+StructuredBuffer<float3> _VertexBuffer;
 float4x4 _ModelToWorldMatrix;
 float4x4 _WorldToCameraMatrix;
 float4 _CameraData; // width, height, near, far
 
 // [0,1]^3 position
-RWStructuredBuffer<Vertex> _VertexResultBuffer;
+RWStructuredBuffer<float3> _VertexResultBuffer;
 
 [numthreads(64,1,1)]
 void CSVertex(uint3 id : SV_DispatchThreadID)
 {
     uint index = id.x;
-    float3 positionOS = _VertexBuffer[index].Position;
+    float3 positionOS = _VertexBuffer[index];
     float4 positionWS = mul(_ModelToWorldMatrix, float4(positionOS, 1));
     float3 positionCS = mul(_WorldToCameraMatrix, float4(positionWS.xyz, 1));
 
-    Vertex v;
-    v.Position = float3(
+    _VertexResultBuffer[index] = float3(
         (positionCS.x + _CameraData.x * 0.5) / _CameraData.x,
         (positionCS.y + _CameraData.y * 0.5) / _CameraData.y,
         (positionCS.z - _CameraData.z) / _CameraData.w
     );
-    _VertexResultBuffer[index] = v;
 }
 
 
 #pragma kernel CSTriangle
 
 // Triangle Cube Intersection from https://bronsonzgeb.com/index.php/2021/05/29/gpu-mesh-voxelizer-part-2/
-struct TriangleIndices
-{
-    uint3 Indices;
-};
 
 struct Triangle
 {
@@ -48,15 +37,8 @@ struct Triangle
 };
 
 uint _TexelSize;
-StructuredBuffer<TriangleIndices> _TriangleBuffer;
+StructuredBuffer<uint> _TriangleBuffer;
 RWTexture3D<float4> _TargetTex;
-
-void Draw(float3 p)
-{
-    if (any(p < 0) || any(p > 1)) return;
-    uint3 t = p * _TexelSize;
-    _TargetTex[t] = 1;
-}
 
 struct AABB
 {
@@ -138,12 +120,12 @@ inline float3 TexelCenterPosition(uint3 p, float texelSizeInv)
 void CSTriangle(uint3 id : SV_DispatchThreadID)
 {
     uint index = id.x;
-    uint3 indices = _TriangleBuffer[index].Indices;
+    uint i = index * 3;
 
     // [0, 1]^3
-    float3 p0 = _VertexResultBuffer[indices.x].Position;
-    float3 p1 = _VertexResultBuffer[indices.y].Position;
-    float3 p2 = _VertexResultBuffer[indices.z].Position;
+    float3 p0 = _VertexResultBuffer[_TriangleBuffer[i]];
+    float3 p1 = _VertexResultBuffer[_TriangleBuffer[i + 1]];
+    float3 p2 = _VertexResultBuffer[_TriangleBuffer[i + 2]];
 
     Triangle tri;
     tri.a = p0;

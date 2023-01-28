@@ -28,19 +28,13 @@ namespace Rasterizer3d
 
         int vertexCount;
         int trisCount;
-        const int TexelSize = 16;
-
+        const int TexelSize = 32;
         public int GetTextureSize => TexelSize;
         public Texture OutRenderTexture => outRenderTexture;
 
         struct Vertex
         {
             public Vector3 Position;
-        }
-
-        struct Triangle
-        {
-            public Vector3Int Indices;
         }
 
         void Start()
@@ -73,36 +67,16 @@ namespace Rasterizer3d
 
             var vertices = mesh.vertices;
             vertexCount = vertices.Length;
-            var vertexArray = new NativeArray<Vertex>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            for (var i = 0; i < vertexCount; i++)
-            {
-                var v = vertices[i];
-                vertexArray[i] = new Vertex
-                {
-                    Position = v,
-                };
-            }
 
-            vertexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, vertexArray.Length, Marshal.SizeOf<Vertex>());
-            vertexResultBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, vertexArray.Length, Marshal.SizeOf<Vertex>());
-            vertexBuffer.SetData(vertexArray);
-            vertexArray.Dispose();
+            vertexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, vertexCount, Marshal.SizeOf<float>() * 3);
+            vertexResultBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, vertexCount, Marshal.SizeOf<float>() * 3);
+            vertexBuffer.SetData(vertices);
 
             var tris = mesh.triangles;
-            trisCount = tris.Length / 3;
-            var trisArray = new NativeArray<Triangle>(trisCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            for (var i = 0; i < trisCount; i++)
-            {
-                var offset = i * 3;
-                trisArray[i] = new Triangle
-                {
-                    Indices = new Vector3Int(tris[offset], tris[offset + 1], tris[offset + 2])
-                };
-            }
+            trisCount = tris.Length;
 
-            triangleBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, trisCount, Marshal.SizeOf<Triangle>());
-            triangleBuffer.SetData(trisArray);
-            trisArray.Dispose();
+            triangleBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, trisCount, Marshal.SizeOf<uint>());
+            triangleBuffer.SetData(tris);
 
             clearKernelIndex = clearShader.FindKernel("CSMain");
             clearShader.SetInt("_TexelSize", TexelSize);
@@ -135,7 +109,7 @@ namespace Rasterizer3d
             rasterizerShader.Dispatch(vertexKernelIndex, (int) (vertexCount / x) + 1, 1, 1);
 
             rasterizerShader.GetKernelThreadGroupSizes(triangleKernelIndex, out var x2, out _, out _);
-            rasterizerShader.Dispatch(triangleKernelIndex, (int) (trisCount / x2) + 1, 1, 1);
+            rasterizerShader.Dispatch(triangleKernelIndex, (int) ((trisCount / 3) / x2) + 1, 1, 1);
         }
     }
 }
