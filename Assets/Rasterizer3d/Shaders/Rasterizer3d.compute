@@ -20,7 +20,7 @@ void CSVertex(uint3 id : SV_DispatchThreadID)
     uint index = id.x;
     float3 positionOS = _VertexBuffer[index].Position;
     float4 positionWS = mul(_ModelToWorldMatrix, float4(positionOS, 1));
-    float3 positionCS = mul(_WorldToCameraMatrix, positionWS);
+    float3 positionCS = mul(_WorldToCameraMatrix, float4(positionWS.xyz, 1));
 
     Vertex v;
     v.Position = float3(
@@ -43,7 +43,14 @@ uint _TexelSize;
 StructuredBuffer<Triangle> _TriangleBuffer;
 RWTexture3D<float4> _TargetTex;
 
-[numthreads(8,8,1)]
+void Draw(float3 p)
+{
+    if (any(p < 0) || any(p > 1)) return;
+    uint3 t = p * _TexelSize;
+    _TargetTex[t] = 1;
+}
+
+[numthreads(64,1,1)]
 void CSTriangle(uint3 id : SV_DispatchThreadID)
 {
     uint index = id.x;
@@ -55,10 +62,15 @@ void CSTriangle(uint3 id : SV_DispatchThreadID)
     float3 p1 = _VertexResultBuffer[indices.y].Position;
     float3 p2 = _VertexResultBuffer[indices.z].Position;
 
-    uint3 t0 = p0 * _TexelSize;
-    uint3 t1 = p1 * _TexelSize;
-    uint3 t2 = p2 * _TexelSize;
-    _TargetTex[t0] = float4(1, 1, 1, 1);
-    _TargetTex[t1] = float4(1, 1, 1, 1);
-    _TargetTex[t2] = float4(1, 1, 1, 1);
+    Draw(p0);
+    Draw(p1);
+    Draw(p2);
+
+    // uint3 t0 = p0 * _TexelSize;
+    // uint3 t1 = p1 * _TexelSize;
+    // uint3 t2 = p2 * _TexelSize;
+    //
+    // _TargetTex[t0] = float4(1, 0, 0, 1);
+    // _TargetTex[t1] = float4(0, 1, 0, 1);
+    // _TargetTex[t2] = float4(0, 0, 1, 1);
 }

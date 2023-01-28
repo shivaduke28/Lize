@@ -28,7 +28,7 @@ namespace Rasterizer3d
 
         int vertexCount;
         int trisCount;
-        const int TexelSize = 32;
+        const int TexelSize = 16;
 
         public int GetTextureSize => TexelSize;
         public Texture OutRenderTexture => outRenderTexture;
@@ -86,7 +86,6 @@ namespace Rasterizer3d
             vertexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, vertexArray.Length, Marshal.SizeOf<Vertex>());
             vertexResultBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, vertexArray.Length, Marshal.SizeOf<Vertex>());
             vertexBuffer.SetData(vertexArray);
-            vertexResultBuffer.SetData(vertexArray);
             vertexArray.Dispose();
 
             var tris = mesh.triangles;
@@ -133,10 +132,10 @@ namespace Rasterizer3d
             var orthSize = camera.orthographicSize * 2;
             rasterizerShader.SetVector("_CameraData", new Vector4(orthSize, orthSize, camera.nearClipPlane, camera.farClipPlane));
             rasterizerShader.GetKernelThreadGroupSizes(vertexKernelIndex, out var x, out _, out _);
-            rasterizerShader.Dispatch(vertexKernelIndex, (int) (vertexCount / x), 1, 1);
+            rasterizerShader.Dispatch(vertexKernelIndex, (int) (vertexCount / x) + 1, 1, 1);
 
             rasterizerShader.GetKernelThreadGroupSizes(triangleKernelIndex, out var x2, out _, out _);
-            rasterizerShader.Dispatch(triangleKernelIndex, (int) (trisCount / x2), 1, 1);
+            rasterizerShader.Dispatch(triangleKernelIndex, (int) (trisCount / x2) + 1, 1, 1);
         }
     }
 }

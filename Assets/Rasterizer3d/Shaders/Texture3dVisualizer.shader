@@ -50,8 +50,8 @@ Shader "Unlit/Texture3dVisualizer"
                 float z = floor(index / (size * size));
                 uint i = index - z * size * size;
                 float y = floor(i / size);
-                float x = i - y * size;
-                float3 uv = float3(x, y, z) / size;
+                float x = floor(i - y * size);
+                float3 uv = (float3(x, y, z) + float3(0.5, 0.5, 0.5)) / size;
                 float4 col = tex3Dlod(_Tex3d, float4(uv, 0));
 
                 float3 v2 = v.vertex.xyz;
