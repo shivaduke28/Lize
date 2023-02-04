@@ -28,7 +28,7 @@ namespace Rasterizer3d
 
         int vertexCount;
         int trisCount;
-        public int GetTextureSize => texelSize;
+        public int TextureSize => texelSize;
         public Texture OutRenderTexture => outRenderTexture;
 
         void Start()

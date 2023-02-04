@@ -5,6 +5,9 @@ using UnityEngine.Rendering;
 
 namespace Rasterizer3d
 {
+    /// <summary>
+    /// not used
+    /// </summary>
     [DefaultExecutionOrder(1)]
     public sealed class Texture3dVisualizer : MonoBehaviour
     {
@@ -17,7 +20,7 @@ namespace Rasterizer3d
 
         void Start()
         {
-            var size = meshRasterizer.GetTextureSize;
+            var size = meshRasterizer.TextureSize;
             material.SetInt("_Size", size);
             material.SetTexture("_Tex3d", meshRasterizer.OutRenderTexture);
 

@@ -17,7 +17,7 @@ namespace Rasterizer3d
         void Start()
         {
             mesh = MeshUtil.CreateCube();
-            var texelSize = rasterizer.GetTextureSize;
+            var texelSize = rasterizer.TextureSize;
             gridPointCount = texelSize * texelSize * texelSize;
             material.SetInt("_TexelSize", texelSize);
             material.SetTexture("_Tex3d", rasterizer.OutRenderTexture);
