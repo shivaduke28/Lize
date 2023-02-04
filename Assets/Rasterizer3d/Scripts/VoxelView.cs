@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Rasterizer3d
 {
@@ -40,6 +41,11 @@ namespace Rasterizer3d
         void Render()
         {
             Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, bufferWithArgs);
+        }
+
+        void OnDestroy()
+        {
+            bufferWithArgs.Dispose();
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -103,6 +104,13 @@ namespace Rasterizer3d
 
             rasterizerShader.GetKernelThreadGroupSizes(triangleKernelIndex, out var x2, out _, out _);
             rasterizerShader.Dispatch(triangleKernelIndex, (int) ((trisCount / 3) / x2) + 1, 1, 1);
+        }
+
+        void OnDestroy()
+        {
+            vertexBuffer.Dispose();
+            vertexResultBuffer.Dispose();
+            triangleBuffer.Dispose();
         }
     }
 }
