@@ -5,9 +5,10 @@ using UnityEngine.Rendering;
 
 namespace Lize
 {
+    // Rasterizerの出力Bufferを3DTextureに書き込むやつ
     public sealed class BufferViewer : IDisposable
     {
-        readonly Rasterizer rasterizer;
+        readonly RasterizerContext context;
         readonly ComputeShader debugShader;
 
         RenderTexture renderTexture;
@@ -17,16 +18,16 @@ namespace Lize
         int copyKernel;
         int copyThreadGroupCount;
 
-        public BufferViewer(Rasterizer rasterizer, ComputeShader debugShader)
+        public BufferViewer(ComputeShader debugShader, RasterizerContext context)
         {
-            this.rasterizer = rasterizer;
+            this.context = context;
             this.debugShader = debugShader;
             Initialize();
         }
 
         void Initialize()
         {
-            var resolution = rasterizer.Resolution;
+            var resolution = context.Resolution;
             var param = new RenderTextureDescriptor
             {
                 width = resolution,
@@ -41,7 +42,7 @@ namespace Lize
             renderTexture = new RenderTexture(param);
             renderTexture.Create();
 
-            length = rasterizer.Length;
+            length = context.Count;
 
             copyKernel = debugShader.FindKernel("Copy");
             debugShader.GetKernelThreadGroupSizes(copyKernel, out var x, out _, out _);
@@ -50,7 +51,7 @@ namespace Lize
 
         public void Render()
         {
-            debugShader.SetBuffer(copyKernel, "_Buffer", rasterizer.TargetBuffer);
+            debugShader.SetBuffer(copyKernel, "_Buffer", context.Buffer);
             debugShader.SetTexture(copyKernel, "_Texture", renderTexture);
             debugShader.Dispatch(copyKernel, length / copyThreadGroupCount, 1, 1);
         }

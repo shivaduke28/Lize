@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -11,11 +10,8 @@ namespace Lize
         readonly ComputeShader clearShader;
         readonly ComputeShader vertexShader;
         readonly ComputeShader triangleShader;
+        readonly RasterizerContext context;
 
-        public int Resolution { get; }
-        public int Length { get; }
-
-        public GraphicsBuffer TargetBuffer { get; private set; }
         int clearKernelIndex;
         int clearThreadGroupSize;
 
@@ -27,13 +23,12 @@ namespace Lize
 
         GraphicsBuffer vertexCSBuffer;
 
-        public Rasterizer(ComputeShader clearShader, ComputeShader vertexShader, ComputeShader triangleShader, int resolution)
+        public Rasterizer(ComputeShader clearShader, ComputeShader vertexShader, ComputeShader triangleShader, RasterizerContext context)
         {
             this.clearShader = clearShader;
             this.vertexShader = vertexShader;
             this.triangleShader = triangleShader;
-            this.Resolution = resolution;
-            Length = resolution * resolution * resolution;
+            this.context = context;
 
             Initialize();
         }
@@ -41,8 +36,6 @@ namespace Lize
 
         void Initialize()
         {
-            TargetBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Length, Marshal.SizeOf<bool>());
-
             clearKernelIndex = clearShader.FindKernel("Clear");
             clearShader.GetKernelThreadGroupSizes(clearKernelIndex, out var x, out _, out _);
             clearThreadGroupSize = (int) x;
@@ -58,8 +51,8 @@ namespace Lize
 
         public void Clear()
         {
-            clearShader.SetBuffer(clearKernelIndex, "_Target", TargetBuffer);
-            clearShader.Dispatch(clearKernelIndex, Length / clearThreadGroupSize, 1, 1);
+            clearShader.SetBuffer(clearKernelIndex, "_Target", context.Buffer);
+            clearShader.Dispatch(clearKernelIndex, Mathf.CeilToInt(context.Count / (float) clearThreadGroupSize), 1, 1);
         }
 
         public void Render(Camera camera, MeshFilter meshFilter)
@@ -97,8 +90,8 @@ namespace Lize
             var indexBuffer = mesh.GetIndexBuffer();
             triangleShader.SetBuffer(triangleKernelIndex, "_IndexBuffer", indexBuffer);
             triangleShader.SetBuffer(triangleKernelIndex, "_VertexCSBuffer", vertexCSBuffer);
-            triangleShader.SetBuffer(triangleKernelIndex, "_Target", TargetBuffer);
-            triangleShader.SetInt("_TexelSize", Resolution);
+            triangleShader.SetBuffer(triangleKernelIndex, "_Target", context.Buffer);
+            triangleShader.SetInt("_TexelSize", context.Resolution);
             triangleShader.SetBool("_Index32Bit", mesh.indexFormat == IndexFormat.UInt32);
             var trisCount = (int) mesh.GetIndexCount(0) / 3;
             triangleShader.SetInt("_TriangleCount", trisCount);
@@ -111,7 +104,6 @@ namespace Lize
         public void Dispose()
         {
             vertexCSBuffer.Dispose();
-            TargetBuffer.Dispose();
         }
     }
 }

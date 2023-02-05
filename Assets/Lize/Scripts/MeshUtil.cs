@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Rasterizer3d
+namespace Lize
 {
     public static class MeshUtil
     {

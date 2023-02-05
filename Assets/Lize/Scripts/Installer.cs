@@ -12,26 +12,32 @@ namespace Lize
         [Space] [SerializeField] MeshFilter meshFilter;
         [SerializeField] Camera rasterizerCamera;
 
+        [SerializeField] RasterizerBufferRenderer bufferRenderer;
+
         Rasterizer rasterizer;
         BufferViewer bufferViewer;
+        RasterizerContext context;
 
         void Start()
         {
-            rasterizer = new Rasterizer(clearShader, vertexShader, triangleShader, resolution);
-            bufferViewer = new BufferViewer(rasterizer, debugShader);
+            context = new RasterizerContext(resolution);
+            rasterizer = new Rasterizer(clearShader, vertexShader, triangleShader, context);
+            bufferViewer = new BufferViewer(debugShader, context);
+            bufferRenderer.Construct(context);
         }
 
         void Update()
         {
             rasterizer.Clear();
             rasterizer.Render(rasterizerCamera, meshFilter);
-            bufferViewer.Render();
+            //bufferViewer.Render();
         }
 
         void OnDestroy()
         {
             rasterizer.Dispose();
             bufferViewer.Dispose();
+            context.Dispose();
         }
     }
 }
