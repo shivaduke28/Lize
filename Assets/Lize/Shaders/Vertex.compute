@@ -1,0 +1,28 @@
+#pragma kernel Vertex
+
+RWByteAddressBuffer _VertexOSBuffer;
+float4x4 _ModelToCameraMatrix;
+float4 _CameraData; // width/2, height/2, near, far
+
+uint _Stride;
+uint _Offset;
+
+RWStructuredBuffer<float3> _VertexCSBuffer;
+
+// for debug
+RWStructuredBuffer<bool> _Target;
+
+[numthreads(64,1,1)]
+void Vertex(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+
+    float3 positionOS = asfloat(_VertexOSBuffer.Load3(index * _Stride + _Offset));
+    float3 positionCS = mul(_ModelToCameraMatrix, float4(positionOS.xyz, 1)).xyz;
+
+    _VertexCSBuffer[index] = float3(
+        (positionCS.x + _CameraData.x) / (_CameraData.x * 2.0),
+        (positionCS.y + _CameraData.y) / (_CameraData.y * 2.0),
+        (positionCS.z - _CameraData.z) / _CameraData.w
+    );
+}
