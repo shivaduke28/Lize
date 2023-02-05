@@ -1,0 +1,19 @@
+#pragma kernel Copy
+
+RWStructuredBuffer<bool> _Buffer;
+RWTexture3D<float4> _Texture;
+
+[numthreads(8,8,1)]
+void Copy(uint3 id : SV_DispatchThreadID)
+{
+    uint dimX, dimY, dimZ;
+    _Texture.GetDimensions(dimX, dimY, dimZ);
+    uint index = id.x;
+
+    uint z = floor(index / (dimX * dimY));
+    uint a = index - z * dimX * dimY;
+    uint y = floor(a / dimX);
+    uint x = a - y * dimX;
+    uint3 p = uint3(x, y, z);
+    _Texture[p] = _Buffer[index];
+}

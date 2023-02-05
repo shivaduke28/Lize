@@ -1,0 +1,17 @@
+#pragma kernel Render
+RWStructuredBuffer<bool> _Target;
+uint3 _Dimension;
+
+[numthreads(8,8,1)]
+void Render(uint3 id : SV_DispatchThreadID)
+{
+    uint dimX = _Dimension.x;
+    uint dimY = _Dimension.y;
+    uint index = id.x;
+
+    uint z = floor(index / (dimX * dimY));
+    uint a = index - z * dimX * dimY;
+    uint y = floor(a / dimX);
+    uint x = a - y * dimX;
+    _Target[index] = x == y && y == z;
+}

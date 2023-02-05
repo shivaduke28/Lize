@@ -1,0 +1,10 @@
+#pragma kernel Clear
+
+RWStructuredBuffer<bool> _Target;
+
+[numthreads(8,8,1)]
+void Clear(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    _Target[index] = false;
+}
