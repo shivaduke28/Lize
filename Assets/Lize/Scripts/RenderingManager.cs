@@ -9,11 +9,13 @@ namespace Lize
 
         Rasterizer rasterizer;
         RenderingContext renderingContext;
+        SDFGenerator sdfGenerator;
 
-        public void Construct(Rasterizer rasterizer, RenderingContext renderingContext)
+        public void Construct(Rasterizer rasterizer, RenderingContext renderingContext, SDFGenerator sdfGenerator)
         {
             this.renderingContext = renderingContext;
             this.rasterizer = rasterizer;
+            this.sdfGenerator = sdfGenerator;
         }
 
         void LateUpdate()
@@ -23,6 +25,7 @@ namespace Lize
             {
                 rasterizer.Render(targetCamera, meshFilter);
             }
+            sdfGenerator.Update();
         }
     }
 }

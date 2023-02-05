@@ -35,11 +35,13 @@ Shader "Lize/RasterizerBuffer"
                 float2 uv : TEXCOORD0;
                 float4 vertex : SV_POSITION;
                 float3 normalWS : TEXCOORD1;
+                float sdf : TEXCOORD2;
             };
 
             uint3 _Dimension;
 
             StructuredBuffer<bool> _Buffer;
+            StructuredBuffer<float> _SDFBuffer;
 
             float3 id2pos(uint id)
             {
@@ -56,11 +58,12 @@ Shader "Lize/RasterizerBuffer"
                 float3 positionOS = v.vertex;
                 uint id = v.instanceID;
                 bool value = _Buffer[id];
-                positionOS *= (uint)value;
+                positionOS *= value ? 1 : 0.1;
                 positionOS += id2pos(id);
 
                 o.vertex = UnityObjectToClipPos(float4(positionOS, 1));
                 o.normalWS = UnityObjectToWorldNormal(v.normal);
+                o.sdf = _SDFBuffer[id];
                 return o;
             }
 
@@ -69,7 +72,7 @@ Shader "Lize/RasterizerBuffer"
                 fixed4 col = 1;
                 float3 n = normalize(i.normalWS);
                 col *= max(0.1, dot(n, float3(1, 1, 1)));
-                col.rgb *= abs(n);
+                col.r = sin(i.sdf + _Time.y);
                 return col;
             }
             ENDCG

@@ -200,7 +200,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 190217513}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -3.29}
+  m_LocalPosition: {x: 44, y: 15.2, z: -26.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -250,7 +250,7 @@ BoxCollider:
   m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 10, y: 10, z: 10}
+  m_Size: {x: 100, y: 100, z: 100}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &218498454
 Transform:
@@ -436,6 +436,7 @@ MonoBehaviour:
   clearShader: {fileID: 7200000, guid: 0431f29eca8a43b47ad366a1ed291cc1, type: 3}
   vertexShader: {fileID: 7200000, guid: 016988485d1f421dbc29a28223af28cb, type: 3}
   triangleShader: {fileID: 7200000, guid: 68bb15e5963f4f959244c133f859ae46, type: 3}
+  sdfShader: {fileID: 7200000, guid: 6604978bbc0741659424b55820e2f140, type: 3}
   resolution: 64
   renderingManager: {fileID: 985309477}
   bufferRenderer: {fileID: 218498452}

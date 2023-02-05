@@ -18,6 +18,7 @@ namespace Lize
         {
             this.context = context;
             material.SetBuffer("_Buffer", context.Buffer);
+            material.SetBuffer("_SDFBuffer", context.SDFBuffer);
             material.SetVector("_Dimension", new Vector4(context.Resolution, context.Resolution, context.Resolution));
             mesh = MeshUtil.CreateCube();
             bufferWithArgs?.Dispose();

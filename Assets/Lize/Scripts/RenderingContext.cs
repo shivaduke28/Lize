@@ -22,6 +22,7 @@ namespace Lize
         public void Dispose()
         {
             Buffer.Dispose();
+            SDFBuffer.Dispose();
         }
     }
 }

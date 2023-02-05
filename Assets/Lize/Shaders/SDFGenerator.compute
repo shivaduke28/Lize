@@ -1,0 +1,150 @@
+#pragma kernel First
+
+StructuredBuffer<bool> _RasterizerBuffer;
+RWStructuredBuffer<uint4> _TargetBuffer;
+
+uint _Resolution;
+
+int3 Index2TexelPosition(uint index)
+{
+    uint r = _Resolution;
+    uint z = floor(index / (r * r));
+    uint a = index - z * r * r;
+    uint y = floor(a / r);
+    uint x = a - y * r;
+    return uint3(x, y, z);
+}
+
+uint TexelPositionToIndex(int3 texel)
+{
+    uint r = _Resolution;
+    return texel.x + texel.y * r + texel.z * r * r;
+}
+
+uint4 JumpFirst(int3 origin, int3 target, uint4 current)
+{
+    if (any(target < 0) || any(target >= (int)_Resolution)) return current;
+
+    uint i = TexelPositionToIndex(target);
+    bool isSeed = _RasterizerBuffer[i];
+    // jump target is not seed
+    if (!isSeed)
+    {
+        return current;
+    }
+
+    // jump target is seed, and current has no seed.
+    if (current.w == 0)
+    {
+        return uint4(target, 1);
+    }
+
+    // jump target and current are both seeds.
+    int3 d1 = origin - target;
+    int3 d2 = origin - current.xyz;
+    if (dot(d1, d1) <= dot(d2, d2))
+    {
+        return uint4(target, 1);
+    }
+
+    return current;
+}
+
+[numthreads(64,1,1)]
+void First(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    if (index >= _Resolution * _Resolution * _Resolution) return;
+
+    int3 origin = Index2TexelPosition(index);
+    bool isSeed = _RasterizerBuffer[index];
+
+    if (isSeed)
+    {
+        _TargetBuffer[index] = uint4(origin, 1);
+        return;
+    }
+
+    uint jump = _Resolution / 2;
+
+    uint4 current = 0;
+
+    current = JumpFirst(origin, origin + int3(jump, 0, 0), current);
+    current = JumpFirst(origin, origin - int3(jump, 0, 0), current);
+    current = JumpFirst(origin, origin + int3(0, jump, 0), current);
+    current = JumpFirst(origin, origin - int3(0, jump, 0), current);
+    current = JumpFirst(origin, origin + int3(0, 0, jump), current);
+    current = JumpFirst(origin, origin - int3(0, 0, jump), current);
+
+    _TargetBuffer[index] = current;
+}
+
+#pragma kernel Loop
+
+StructuredBuffer<uint4> _SourceBuffer;
+
+uint _Jump;
+
+uint4 Jump(int3 origin, int3 target, uint4 current)
+{
+    if (any(target < 0) || any(target >= (int)_Resolution)) return current;
+
+    uint i = TexelPositionToIndex(target);
+    uint4 targetValue = _SourceBuffer[i];
+
+    // jump target is not seed
+    if (targetValue.w == 0)
+    {
+        return current;
+    }
+
+    // jump target is seed, and current has no seed.
+    if (current.w == 0)
+    {
+        return targetValue;
+    }
+
+    // jump target and current are both seeds.
+    int3 d1 = origin - targetValue.xyz;
+    int3 d2 = origin - current.xyz;
+    if (dot(d1, d1) <= dot(d2, d2))
+    {
+        return targetValue;
+    }
+
+    return current;
+}
+
+
+[numthreads(64,1,1)]
+void Loop(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    if (index >= _Resolution * _Resolution * _Resolution) return;
+    int3 origin = Index2TexelPosition(index);
+
+    uint4 current = _SourceBuffer[index];
+    uint jump = _Jump;
+    current = Jump(origin, origin + int3(jump, 0, 0), current);
+    current = Jump(origin, origin - int3(jump, 0, 0), current);
+    current = Jump(origin, origin + int3(0, jump, 0), current);
+    current = Jump(origin, origin - int3(0, jump, 0), current);
+    current = Jump(origin, origin + int3(0, 0, jump), current);
+    current = Jump(origin, origin - int3(0, 0, jump), current);
+    _TargetBuffer[index] = current;
+}
+
+#pragma kernel Final
+// uint2 -> float
+
+RWStructuredBuffer<float> _SDFBuffer;
+
+[numthreads(64,1,1)]
+void Final(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    if (index >= _Resolution * _Resolution * _Resolution) return;
+    int3 origin = Index2TexelPosition(index);
+    uint4 nearest = _SourceBuffer[index];
+    _SDFBuffer[index] = distance(origin, nearest.xyz);
+}
