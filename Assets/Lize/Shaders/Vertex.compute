@@ -6,6 +6,7 @@ float4 _CameraData; // width/2, height/2, near, far
 
 uint _Stride;
 uint _Offset;
+uint _VertexCount;
 
 RWStructuredBuffer<float3> _VertexCSBuffer;
 
@@ -17,8 +18,10 @@ void Vertex(uint3 id : SV_DispatchThreadID)
 {
     uint index = id.x;
 
+    if (index >= _VertexCount) return;
+
     float3 positionOS = asfloat(_VertexOSBuffer.Load3(index * _Stride + _Offset));
-    float3 positionCS = mul(_ModelToCameraMatrix, float4(positionOS.xyz, 1)).xyz;
+    float3 positionCS = mul(_ModelToCameraMatrix, float4(positionOS, 1)).xyz;
 
     _VertexCSBuffer[index] = float3(
         (positionCS.x + _CameraData.x) / (_CameraData.x * 2.0),

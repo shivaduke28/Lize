@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Lize
 {
@@ -9,7 +8,6 @@ namespace Lize
         [SerializeField] ComputeShader vertexShader;
         [SerializeField] ComputeShader triangleShader;
         [SerializeField] ComputeShader debugShader;
-        [SerializeField] bool isDebug;
         [SerializeField] int resolution = 32;
         [Space] [SerializeField] MeshFilter meshFilter;
         [SerializeField] Camera rasterizerCamera;

@@ -3,17 +3,19 @@
 RWStructuredBuffer<bool> _Buffer;
 RWTexture3D<float4> _Texture;
 
-[numthreads(8,8,1)]
+[numthreads(64,1,1)]
 void Copy(uint3 id : SV_DispatchThreadID)
 {
     uint dimX, dimY, dimZ;
     _Texture.GetDimensions(dimX, dimY, dimZ);
     uint index = id.x;
 
+    if (index >= dimX * dimY * dimZ) return;
+
     uint z = floor(index / (dimX * dimY));
     uint a = index - z * dimX * dimY;
     uint y = floor(a / dimX);
     uint x = a - y * dimX;
     uint3 p = uint3(x, y, z);
-    _Texture[p] = _Buffer[index];
+    _Texture[p] = float4(1, 1, 1, _Buffer[index]);
 }

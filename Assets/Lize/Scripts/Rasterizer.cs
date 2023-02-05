@@ -1,6 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
-using Unity.VisualScripting;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -80,15 +80,16 @@ namespace Lize
 
             vertexShader.SetBuffer(vertexKernelIndex, "_VertexOSBuffer", vertexBuffer);
             vertexShader.SetBuffer(vertexKernelIndex, "_VertexCSBuffer", vertexCSBuffer);
-            vertexShader.SetBuffer(vertexKernelIndex, "_Target", TargetBuffer); // for debug
+            // vertexShader.SetBuffer(vertexKernelIndex, "_Target", TargetBuffer); // for debug
 
             vertexShader.SetInt("_Stride", stride);
             vertexShader.SetInt("_Offset", offset);
+            vertexShader.SetInt("_VertexCount", vertexCount);
 
             vertexShader.SetMatrix("_ModelToCameraMatrix", worldToCamera * modelToWorld);
             var size = camera.orthographicSize;
             vertexShader.SetVector("_CameraData", new Vector4(size, size, camera.nearClipPlane, camera.farClipPlane));
-            vertexShader.Dispatch(vertexKernelIndex, vertexCount / vertexThreadGroupSize, 1, 1);
+            vertexShader.Dispatch(vertexKernelIndex, Mathf.CeilToInt(vertexCount / (float) vertexThreadGroupSize), 1, 1);
 
             vertexBuffer.Release();
 
@@ -100,7 +101,8 @@ namespace Lize
             triangleShader.SetInt("_TexelSize", Resolution);
             triangleShader.SetBool("_Index32Bit", mesh.indexFormat == IndexFormat.UInt32);
             var trisCount = (int) mesh.GetIndexCount(0) / 3;
-            triangleShader.Dispatch(triangleKernelIndex, trisCount / triangleThreadGroupSize, 1, 1);
+            triangleShader.SetInt("_TriangleCount", trisCount);
+            triangleShader.Dispatch(triangleKernelIndex, Mathf.CeilToInt(trisCount / (float) triangleThreadGroupSize), 1, 1);
 
             vertexCSBuffer.Release();
             indexBuffer.Release();
