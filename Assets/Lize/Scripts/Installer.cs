@@ -7,11 +7,9 @@ namespace Lize
         [SerializeField] ComputeShader clearShader;
         [SerializeField] ComputeShader vertexShader;
         [SerializeField] ComputeShader triangleShader;
-        [SerializeField] ComputeShader debugShader;
         [SerializeField] int resolution = 32;
-        [Space] [SerializeField] MeshFilter meshFilter;
-        [SerializeField] Camera rasterizerCamera;
 
+        [SerializeField] RenderingManager renderingManager;
         [SerializeField] RasterizerBufferRenderer bufferRenderer;
 
         Rasterizer rasterizer;
@@ -22,21 +20,15 @@ namespace Lize
         {
             context = new RasterizerContext(resolution);
             rasterizer = new Rasterizer(clearShader, vertexShader, triangleShader, context);
-            bufferViewer = new BufferViewer(debugShader, context);
+            renderingManager.Construct(rasterizer, context);
+            // bufferViewer = new BufferViewer(debugShader, context);
             bufferRenderer.Construct(context);
-        }
-
-        void Update()
-        {
-            rasterizer.Clear();
-            rasterizer.Render(rasterizerCamera, meshFilter);
-            //bufferViewer.Render();
         }
 
         void OnDestroy()
         {
             rasterizer.Dispose();
-            bufferViewer.Dispose();
+            // bufferViewer.Dispose();
             context.Dispose();
         }
     }

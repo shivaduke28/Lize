@@ -68,8 +68,8 @@ Shader "Lize/RasterizerBuffer"
             {
                 fixed4 col = 1;
                 float3 n = normalize(i.normalWS);
-                col *= max(0, dot(n, float3(1, 1, 1)));
-                col.rgb *= n;
+                col *= max(0.1, dot(n, float3(1, 1, 1)));
+                col.rgb *= abs(n);
                 return col;
             }
             ENDCG
