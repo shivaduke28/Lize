@@ -11,10 +11,10 @@ namespace Lize
         Mesh mesh;
         ComputeBuffer bufferWithArgs;
 
-        RasterizerContext context;
+        RenderingContext context;
         bool isInitialized;
 
-        public void Construct(RasterizerContext context)
+        public void Construct(RenderingContext context)
         {
             this.context = context;
             material.SetBuffer("_Buffer", context.Buffer);

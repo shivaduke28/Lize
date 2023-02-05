@@ -14,11 +14,11 @@ namespace Lize
 
         Rasterizer rasterizer;
         BufferViewer bufferViewer;
-        RasterizerContext context;
+        RenderingContext context;
 
         void Start()
         {
-            context = new RasterizerContext(resolution);
+            context = new RenderingContext(resolution);
             rasterizer = new Rasterizer(clearShader, vertexShader, triangleShader, context);
             renderingManager.Construct(rasterizer, context);
             // bufferViewer = new BufferViewer(debugShader, context);

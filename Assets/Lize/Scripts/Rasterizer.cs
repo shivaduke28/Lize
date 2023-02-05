@@ -10,7 +10,7 @@ namespace Lize
         readonly ComputeShader clearShader;
         readonly ComputeShader vertexShader;
         readonly ComputeShader triangleShader;
-        readonly RasterizerContext context;
+        readonly RenderingContext context;
 
         int clearKernelIndex;
         int clearThreadGroupSize;
@@ -23,7 +23,7 @@ namespace Lize
 
         GraphicsBuffer vertexCSBuffer;
 
-        public Rasterizer(ComputeShader clearShader, ComputeShader vertexShader, ComputeShader triangleShader, RasterizerContext context)
+        public Rasterizer(ComputeShader clearShader, ComputeShader vertexShader, ComputeShader triangleShader, RenderingContext context)
         {
             this.clearShader = clearShader;
             this.vertexShader = vertexShader;

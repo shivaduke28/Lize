@@ -8,7 +8,7 @@ namespace Lize
     // Rasterizerの出力Bufferを3DTextureに書き込むやつ
     public sealed class BufferViewer : IDisposable
     {
-        readonly RasterizerContext context;
+        readonly RenderingContext context;
         readonly ComputeShader debugShader;
 
         RenderTexture renderTexture;
@@ -18,7 +18,7 @@ namespace Lize
         int copyKernel;
         int copyThreadGroupCount;
 
-        public BufferViewer(ComputeShader debugShader, RasterizerContext context)
+        public BufferViewer(ComputeShader debugShader, RenderingContext context)
         {
             this.context = context;
             this.debugShader = debugShader;

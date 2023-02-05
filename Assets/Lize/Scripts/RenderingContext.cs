@@ -4,17 +4,19 @@ using UnityEngine;
 
 namespace Lize
 {
-    public sealed class RasterizerContext : IDisposable
+    public sealed class RenderingContext : IDisposable
     {
         public int Resolution { get; }
         public int Count { get; }
         public GraphicsBuffer Buffer { get; }
+        public GraphicsBuffer SDFBuffer { get; }
 
-        public RasterizerContext(int resolution)
+        public RenderingContext(int resolution)
         {
             Resolution = resolution;
             Count = resolution * resolution * resolution;
             Buffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Count, Marshal.SizeOf<bool>());
+            SDFBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Count, Marshal.SizeOf<float>());
         }
 
         public void Dispose()

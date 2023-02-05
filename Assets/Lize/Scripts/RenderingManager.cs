@@ -8,11 +8,11 @@ namespace Lize
         [SerializeField] MeshFilter[] meshFilters;
 
         Rasterizer rasterizer;
-        RasterizerContext rasterizerContext;
+        RenderingContext renderingContext;
 
-        public void Construct(Rasterizer rasterizer, RasterizerContext rasterizerContext)
+        public void Construct(Rasterizer rasterizer, RenderingContext renderingContext)
         {
-            this.rasterizerContext = rasterizerContext;
+            this.renderingContext = renderingContext;
             this.rasterizer = rasterizer;
         }
 
