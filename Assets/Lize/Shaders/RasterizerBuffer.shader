@@ -56,29 +56,27 @@ Shader "Lize/RasterizerBuffer"
             {
                 v2f o;
                 float3 positionOS = v.vertex;
+                float3 normalWS = UnityObjectToWorldNormal(v.normal);
                 uint id = v.instanceID;
                 float dist = _SDFBuffer[id];
                 float3 scale = _Bounds * _DimensionInv;
-                // if (dist > 0)
-                // {
-                //     o.vertex = 0.0 / 0.0;
-                //     return o;
-                // }
-                positionOS *= _Scale;
-                positionOS *= dist <= 0 ? 1 : 0.15;
-                positionOS += id2pos(id);
-                positionOS *= scale;
-
-                o.vertex = UnityObjectToClipPos(float4(positionOS, 1));
-                o.normalWS = UnityObjectToWorldNormal(v.normal);
+                float heat = 1;
                 if (dist <= 0)
                 {
-                    o.color = max(0.1, dot(o.normalWS, float3(1, 1, 1)));
+                    o.color = max(0.1, dot(normalWS, float3(1, 1, 1)));
                 }
                 else
                 {
-                    o.color = TurboColormap(1 - dist / length(_Dimension) * 2.2);
+                    heat = 1 - dist / length(_Dimension) * 2.2;
+                    o.color = TurboColormap(heat);
+                    positionOS.y += sin(_Time.y * heat * heat * 2 + id) * 1;
                 }
+                positionOS *= _Scale;
+                positionOS *= dist <= 0 ? 1 : smoothstep(0.1, 1.2, heat) * 0.15 + 0.04;
+                positionOS += id2pos(id);
+                positionOS *= scale;
+                o.vertex = UnityObjectToClipPos(float4(positionOS, 1));
+                o.normalWS = normalWS;
                 return o;
             }
 
