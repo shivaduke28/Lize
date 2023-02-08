@@ -63,7 +63,7 @@ Shader "Lize/RasterizerBuffer"
                 float heat = 1;
                 if (dist <= 0)
                 {
-                    o.color = max(0.1, dot(normalWS, float3(1, 1, 1)));
+                    o.color = max(0.1, dot(normalWS, float3(0.5, 1, -1)));
                 }
                 else
                 {
