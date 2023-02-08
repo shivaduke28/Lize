@@ -146,5 +146,5 @@ void Final(uint3 id : SV_DispatchThreadID)
     if (index >= _Resolution * _Resolution * _Resolution) return;
     int3 origin = Index2TexelPosition(index);
     uint4 nearest = _SourceBuffer[index];
-    _SDFBuffer[index] = distance(origin, nearest.xyz);
+    _SDFBuffer[index] = nearest.w > 0 ? distance(origin, nearest.xyz) : 1.41421356237 * _Resolution;
 }
