@@ -17,6 +17,7 @@ Shader "Lize/RasterizerBuffer"
             #pragma multi_compile_instancing // GPU instancing
 
             #include "UnityCG.cginc"
+            #include "Turbo.hlsl"
 
             struct appdata
             {
@@ -29,7 +30,7 @@ Shader "Lize/RasterizerBuffer"
             {
                 float4 vertex : SV_POSITION;
                 float3 normalWS : TEXCOORD1;
-                float dist : TEXCOORD2;
+                float3 color : TEXCOORD2;
             };
 
             float3 _Bounds;
@@ -37,6 +38,7 @@ Shader "Lize/RasterizerBuffer"
 
             float3 _Dimension;
             float3 _DimensionInv;
+            float4x4 _ModelToWorldMatrix;
 
             // StructuredBuffer<bool> _Buffer; // not used
             StructuredBuffer<float> _SDFBuffer;
@@ -63,24 +65,26 @@ Shader "Lize/RasterizerBuffer"
                 //     return o;
                 // }
                 positionOS *= _Scale;
-                positionOS *= dist <= 0 ? 1 : 0.1;
+                positionOS *= dist <= 0 ? 1 : 0.15;
                 positionOS += id2pos(id);
                 positionOS *= scale;
 
                 o.vertex = UnityObjectToClipPos(float4(positionOS, 1));
                 o.normalWS = UnityObjectToWorldNormal(v.normal);
-                o.dist = dist;
+                if (dist <= 0)
+                {
+                    o.color = max(0.1, dot(o.normalWS, float3(1, 1, 1)));
+                }
+                else
+                {
+                    o.color = TurboColormap(1 - dist / length(_Dimension) * 2.2);
+                }
                 return o;
             }
 
             fixed4 frag(v2f i) : SV_Target
             {
-                fixed4 col = 1;
-                // because we use solid cube, need not to normalize here.
-                float3 n = i.normalWS;
-                col *= max(0.1, dot(n, float3(1, 1, 1)));
-                col.r = sin(i.dist + _Time.y);
-                return col;
+                return float4(i.color, 1);
             }
             ENDCG
         }
