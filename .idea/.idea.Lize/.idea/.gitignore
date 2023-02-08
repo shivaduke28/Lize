@@ -2,7 +2,7 @@
 /shelf/
 /workspace.xml
 # Rider ignored files
-/modules.xml
+/.idea.Lize.iml
 /projectSettingsUpdater.xml
-/.idea.UnityComputeShaderSandbox.iml
 /contentModel.xml
+/modules.xml
