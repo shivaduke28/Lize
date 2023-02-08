@@ -2,4 +2,4 @@
 
 a gpu sdf generator
 
-[![Image from Gyazo](https://i.gyazo.com/66464ce482547e1fabf18947050ac624.gif)](https://gyazo.com/66464ce482547e1fabf18947050ac624)
+![image](https://user-images.githubusercontent.com/45098240/217634156-c222ec57-936c-43d9-a269-42a768c44d7a.png)
